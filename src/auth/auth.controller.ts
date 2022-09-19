@@ -1,18 +1,16 @@
 import {
   Body,
   Controller,
+  Headers,
   HttpCode,
   HttpStatus,
   Post,
   Request,
   UseGuards,
 } from '@nestjs/common';
-import { User } from 'src/user/entities/user.entity';
 import { AuthService } from './auth.service';
-import { CurrentUser } from './decorators/current-user.decorator';
 import { IsPublic } from './decorators/is-public.decorator';
 import { LocalAuthGuard } from './guards/local-auth.guard';
-import { RefreshAuthGuard } from './guards/refresh-auth.guard';
 import { AuthRequest } from './models/AuthRequest';
 
 @Controller()
@@ -28,10 +26,13 @@ export class AuthController {
   }
 
   @IsPublic()
-  @Post('login')
+  @Post('refresh')
   @HttpCode(HttpStatus.OK)
-  @UseGuards(RefreshAuthGuard)
-  refresh(@CurrentUser() user: User) {
-    return this.authService.refreshToken(user);
+  refresh(
+    @Body('refresh_token') refreshToken: string,
+    @Headers('Authorization') bearerToken: string,
+  ) {
+    const accessToken = bearerToken.replace('Bearer ', '');
+    return this.authService.refreshToken(accessToken, refreshToken);
   }
 }
