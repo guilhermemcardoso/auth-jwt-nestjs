@@ -16,6 +16,6 @@ export class AppController {
 
   @Get('me')
   getMe(@CurrentUser() user: User) {
-    return user;
+    return this.appService.getCurrentUser(user);
   }
 }

@@ -31,15 +31,55 @@ export class AuthService {
     throw new UnauthorizedError('Email or password provided is incorrect');
   }
 
-  login(user: User): UserToken {
-    const payload: UserPayload = {
+  async login(user: User): Promise<UserToken> {
+    const accessPayload: UserPayload = {
       sub: user.id,
       email: user.email,
       name: user.name,
     };
 
-    const jwtToken = this.jwtService.sign(payload);
+    const accessToken = this.jwtService.sign(accessPayload, {
+      secret: process.env.JWT_ACCESS_SECRET,
+      expiresIn: process.env.JWT_ACCESS_EXPIRATION_TIME,
+    });
 
-    return { access_token: jwtToken };
+    const refreshPayload: UserPayload = {
+      sub: user.id,
+      email: user.email,
+      name: user.name,
+    };
+
+    const refreshToken = this.jwtService.sign(refreshPayload, {
+      secret: process.env.JWT_REFRESH_SECRET,
+      expiresIn: process.env.JWT_REFRESH_EXPIRATION_TIME,
+    });
+
+    return { access_token: accessToken, refresh_token: refreshToken };
+  }
+
+  refreshToken(user: User) {
+    const accessPayload: UserPayload = {
+      sub: user.id,
+      email: user.email,
+      name: user.name,
+    };
+
+    const accessToken = this.jwtService.sign(accessPayload, {
+      secret: process.env.JWT_ACCESS_SECRET,
+      expiresIn: process.env.JWT_ACCESS_EXPIRATION_TIME,
+    });
+
+    const refreshPayload: UserPayload = {
+      sub: user.id,
+      email: user.email,
+      name: user.name,
+    };
+
+    const newRefreshToken = this.jwtService.sign(refreshPayload, {
+      secret: process.env.JWT_REFRESH_SECRET,
+      expiresIn: process.env.JWT_REFRESH_EXPIRATION_TIME,
+    });
+
+    return { access_token: accessToken, refresh_token: newRefreshToken };
   }
 }
