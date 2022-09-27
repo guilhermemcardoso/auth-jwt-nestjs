@@ -13,6 +13,8 @@ import { UserToken } from './models/UserToken';
 import { UnauthorizedError } from './errors/unauthorized.error';
 import { Cache } from 'cache-manager';
 import { PrismaService } from 'src/prisma/prisma.service';
+import { MailService } from 'src/mail/mail.service';
+import { CreateUserDto } from 'src/user/dto/create-user.dto';
 
 @Injectable()
 export class AuthService {
@@ -20,8 +22,31 @@ export class AuthService {
     private readonly userService: UserService,
     private readonly jwtService: JwtService,
     private readonly prisma: PrismaService,
+    private readonly mailService: MailService,
     @Inject(CACHE_MANAGER) private cacheManager: Cache,
   ) {}
+
+  async register(createUserDto: CreateUserDto) {
+    const createdUser = await this.userService.create(createUserDto);
+
+    const confirmEmailPayload: UserPayload = {
+      sub: createdUser.id,
+      email: createdUser.email,
+      name: createdUser.name,
+    };
+
+    const confirmEmailToken = this.jwtService.sign(confirmEmailPayload, {
+      secret: process.env.JWT_CONFIRM_EMAIL_SECRET,
+      expiresIn: process.env.JWT_CONFIRM_EMAIL_EXPIRATION_TIME,
+    });
+
+    await this.mailService.sendUserConfirmation(createdUser, confirmEmailToken);
+
+    return {
+      ...createdUser,
+      password: undefined,
+    };
+  }
 
   async validateUser(email: string, password: string) {
     const user = await this.userService.findByEmail(email);
@@ -111,5 +136,22 @@ export class AuthService {
     });
 
     return { access_token: newAccessToken, refresh_token: newRefreshToken };
+  }
+
+  async confirmEmail(token: string) {
+    try {
+      const jwtPayload: UserPayload = this.jwtService.verify(token, {
+        secret: process.env.JWT_CONFIRM_EMAIL_SECRET,
+      });
+
+      const user = await this.prisma.user.update({
+        where: { id: jwtPayload.sub },
+        data: { checked: true },
+      });
+
+      return `Email confirmado com sucesso, ${user.name}`;
+    } catch (error) {
+      throw new UnauthorizedException('Invalid token');
+    }
   }
 }

@@ -18,7 +18,6 @@ import * as redisStore from 'cache-manager-redis-store';
       host: process.env.REDIS_HOST,
       port: process.env.REDIS_PORT,
       isGlobal: true,
-      expiresIn: 0,
     }),
   ],
   controllers: [AppController],

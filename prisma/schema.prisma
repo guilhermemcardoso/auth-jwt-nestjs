@@ -15,6 +15,6 @@ model User {
 
   email    String @unique
   password String
-
+  checked Boolean @default(false)
   name String
 }

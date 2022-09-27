@@ -7,9 +7,10 @@ import { LoginValidationMiddleware } from './middlewares/login-validation.middle
 import { JwtStrategy } from './strategies/jwt.strategy';
 import { LocalStrategy } from './strategies/local.strategy';
 import { PrismaModule } from 'src/prisma/prisma.module';
+import { MailModule } from 'src/mail/mail.module';
 
 @Module({
-  imports: [UserModule, PrismaModule, JwtModule.register({})],
+  imports: [UserModule, PrismaModule, MailModule, JwtModule.register({})],
   controllers: [AuthController],
   providers: [AuthService, LocalStrategy, JwtStrategy],
 })
