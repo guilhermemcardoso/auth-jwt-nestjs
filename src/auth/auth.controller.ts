@@ -51,4 +51,26 @@ export class AuthController {
   confirm(@Query('token') token: string) {
     return this.authService.confirmEmail(token);
   }
+
+  @IsPublic()
+  @Get('forgot-password')
+  @HttpCode(HttpStatus.OK)
+  forgotPassword(@Query('email') email: string) {
+    return this.authService.forgotPassword(email);
+  }
+
+  @IsPublic()
+  @Post('recovery-password')
+  @HttpCode(HttpStatus.OK)
+  recoveryPassword(
+    @Body('token') recoveryToken: string,
+    @Body('password') password: string,
+    @Body('confirm_password') confirmPassword: string,
+  ) {
+    return this.authService.recoveryPassword(
+      recoveryToken,
+      password,
+      confirmPassword,
+    );
+  }
 }

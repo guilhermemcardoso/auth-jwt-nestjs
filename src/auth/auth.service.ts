@@ -154,4 +154,62 @@ export class AuthService {
       throw new UnauthorizedException('Invalid token');
     }
   }
+
+  async forgotPassword(email: string) {
+    try {
+      const user = await this.userService.findByEmail(email);
+
+      const passwordRecoveryPayload: UserPayload = {
+        sub: user.id,
+        email: user.email,
+        name: user.name,
+      };
+
+      const passwordRecoveryToken = this.jwtService.sign(
+        passwordRecoveryPayload,
+        {
+          secret: process.env.JWT_PASSWORD_RECOVERY_SECRET,
+          expiresIn: process.env.JWT_PASSWORD_RECOVERY_EXPIRATION_TIME,
+        },
+      );
+
+      await this.mailService.sendRecoveryPassword(user, passwordRecoveryToken);
+
+      return {
+        message:
+          'An email will be sent soon if the chosen email exists in our database',
+      };
+    } catch (error) {
+      return {
+        message:
+          'An email will be sent soon if the chosen email exists in our database',
+      };
+    }
+  }
+
+  async recoveryPassword(
+    recoveryToken: string,
+    password: string,
+    confirmPassword: string,
+  ) {
+    try {
+      if (password !== confirmPassword) {
+        throw new UnauthorizedException('Invalid parameters');
+      }
+
+      const jwtPayload: UserPayload = this.jwtService.verify(recoveryToken, {
+        secret: process.env.JWT_PASSWORD_RECOVERY_SECRET,
+      });
+
+      const newPassword = await bcrypt.hash(password, 10);
+      const user = await this.prisma.user.update({
+        where: { id: jwtPayload.sub },
+        data: { password: newPassword },
+      });
+
+      return `Senha recuperada com sucesso, ${user.name}`;
+    } catch (error) {
+      throw new UnauthorizedException('Invalid parameters');
+    }
+  }
 }

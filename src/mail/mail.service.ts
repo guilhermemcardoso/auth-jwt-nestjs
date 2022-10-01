@@ -19,4 +19,19 @@ export class MailService {
       },
     });
   }
+
+  async sendRecoveryPassword(user: User, token: string) {
+    const url = `${process.env.MAIL_LINK_URL}/auth/recovery?token=${token}`;
+
+    await this.mailerService.sendMail({
+      to: user.email,
+      subject:
+        'Welcome to Nice App! Click on the link to access the password recovery',
+      template: './recovery',
+      context: {
+        name: user.name,
+        url,
+      },
+    });
+  }
 }
